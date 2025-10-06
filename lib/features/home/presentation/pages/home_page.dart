@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:riverpod_todo/core/utils/extensions.dart';
+import 'package:riverpod_todo/features/task/presentation/providers/task/task_provider.dart';
 
 import '../../../../core/widgets/display_white_text.dart';
 import '../../../task/domain/entities/task.dart';
+import '../../../task/presentation/pages/add_task_screen.dart';
 import '../../../task/presentation/widgets/display_list_of_tasks.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
+
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  @override
+  void initState() {
+    ref.read(tasksProvider.notifier).loadTasks();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorScheme;
     final screenSize = context.screenSize;
+    final taskState = ref.watch(tasksProvider);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -44,35 +60,22 @@ class HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DisplayListOfTasks(
-                    List.generate(
-                      5,
-                      (index) => Task(
-                        id: index,
-                        title: "Task ${index + 1}",
-                        note: "Task details go here",
-                        isCompleted: false,
-                        dueDate: DateTime.now().add(Duration(days: index)),
-                      ),
-                    ),
-                  ),
+                  DisplayListOfTasks(tasks: taskState.tasks.where((task) => !task.isCompleted).toList()),
                   Gap(20),
                   Text("Completed Tasks", style: context.textTheme.headlineMedium),
                   Gap(20),
-                  DisplayListOfTasks.completed(
-                    List.generate(
-                      5,
-                      (index) => Task(
-                        id: index,
-                        title: "Task ${index + 1}",
-                        note: "Completed Task details go here",
-                        isCompleted: true,
-                        dueDate: DateTime.now().add(Duration(days: index)),
-                      ),
-                    ),
-                  ),
+                  DisplayListOfTasks.completed(tasks: taskState.tasks.where((task) => task.isCompleted).toList()),
                   Gap(20),
-                  ElevatedButton(onPressed: () {}, child: Text("Add Task")),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final task = await Navigator.push<Task?>(context, MaterialPageRoute(builder: (context) => const AddTaskScreen()));
+                      if (task != null) {
+                        // Handle the newly added task
+                        ref.read(tasksProvider.notifier).addTask(task);
+                      }
+                    },
+                    child: Text("Add Task"),
+                  ),
                 ],
               ),
             ),

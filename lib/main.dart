@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_todo/app.dart';
 
 void main() {
-  runApp(const TodoApp());
+  runApp(ProviderScope(child: const TodoApp()));
 }
